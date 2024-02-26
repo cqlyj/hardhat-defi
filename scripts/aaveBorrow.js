@@ -18,7 +18,53 @@ async function main() {
   console.log("Desposited!");
 
   // borrow
-  
+  let { availableBorrowsETH, totalDebtETH } = await getBorrowUserData(
+    lendingPool,
+    deployer
+  );
+  const daiPrice = await getDaiPrice();
+  const amountDaiToBorrow =
+    availableBorrowsETH.toString() * 0.95 * (1 / Number(daiPrice));
+  const amountDaiToBorrowWei = ethers.parseEther(amountDaiToBorrow.toString());
+  console.log(`You can borrow ${amountDaiToBorrow.toString()} DAI`);
+  await borrowDai(
+    "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    lendingPool,
+    amountDaiToBorrowWei,
+    deployer
+  );
+  await getBorrowUserData(lendingPool, deployer);
+}
+
+async function borrowDai(daiAddress, lendingPool, amountDaiToBorrow, account) {
+  const borrowTx = await lendingPool.borrow(
+    daiAddress,
+    amountDaiToBorrow,
+    2,
+    0,
+    account
+  );
+  await borrowTx.wait(1);
+  console.log("You've borrowed!");
+}
+
+async function getDaiPrice() {
+  const daiEthPriceFeed = await ethers.getContractAt(
+    "AggregatorV3Interface",
+    "0x773616E4d11A78F511299002da57A0a94577F1f4"
+  );
+  const price = (await daiEthPriceFeed.latestRoundData())[1];
+  console.log(`The DAI/ETH price is ${price.toString()}`);
+  return price;
+}
+
+async function getBorrowUserData(lendingPool, account) {
+  const { totalCollateralETH, totalDebtETH, availableBorrowsETH } =
+    await lendingPool.getUserAccountData(account);
+  console.log(`You have ${totalCollateralETH} worth of ETH deposited.`);
+  console.log(`You have ${totalDebtETH} worth of ETH borrowed.`);
+  console.log(`You can borrow ${availableBorrowsETH} worth of ETH.`);
+  return { availableBorrowsETH, totalDebtETH };
 }
 
 async function approveErc20(erc20Address, spenderAddress, amount, signer) {
