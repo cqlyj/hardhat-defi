@@ -34,6 +34,22 @@ async function main() {
     deployer
   );
   await getBorrowUserData(lendingPool, deployer);
+
+  // repay
+  await repay(
+    amountDaiToBorrowWei,
+    "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    lendingPool,
+    deployer,
+    signer
+  );
+}
+
+async function repay(amount, daiAddress, lendingPool, account, signer) {
+  await approveErc20(daiAddress, lendingPool.target, amount, signer);
+  const repayTx = await lendingPool.repay(daiAddress, amount, 2, account);
+  await repayTx.wait(1);
+  console.log("Repaid!");
 }
 
 async function borrowDai(daiAddress, lendingPool, amountDaiToBorrow, account) {
